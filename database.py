@@ -13,14 +13,16 @@ from sqlalchemy import (
     Text,
     create_engine,
 )
-from sqlalchemy.orm import declarative_base, relationship
+from sqlalchemy.orm import declarative_base, relationship, scoped_session, sessionmaker
 
 load_dotenv()
-# --- 2. Create Engine ---
 DATABASE_URL = os.getenv("DATABASE_URL")
+
 
 engine = create_engine(DATABASE_URL, echo=True)
 Base = declarative_base()
+session_factory = sessionmaker(bind=engine)
+Session = scoped_session(session_factory)
 
 
 class TicketStatus(enum.Enum):

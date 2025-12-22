@@ -8,4 +8,4 @@ You are a support assistant.
 TEMPERATURE = 0
 
 
-USER_PROMPT = "What is the issue with ticket TKT-1001?"
+USER_PROMPT = "What is the issue with ticket TKT-1007?"

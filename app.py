@@ -7,6 +7,7 @@ from pydantic_ai import Agent, RunContext
 from pydantic_ai.models.mistral import MistralModel
 
 from config import AI_MODEL, SYSTEM_PROMPT, USER_PROMPT
+from service_layer.ticket_service import TicketDetails, get_ticket_infos
 
 load_dotenv()
 api_key = os.getenv("MISTRAL_API_KEY")
@@ -19,59 +20,39 @@ class MyDeps:
 
 
 model = MistralModel(AI_MODEL)
-
 agent = Agent(model, system_prompt=SYSTEM_PROMPT, deps_type=MyDeps)
 
 
-class TicketDetails(BaseModel):
-    ticket_id: str = Field(
-        # Regex: Starts with TKT-, followed by 1 or more digits
-        pattern=r"^TKT-\d+$",
-        description="The unique identifier for the ticket. Must follow the format 'TKT-' followed by numbers.",
-        examples=["TKT-1001", "TKT-9999"],
-    )
-    reason: str = Field(description="A concise explanation of the customer's problem")
-    confidence_level: float = Field(
-        ge=0,
-        le=1,
-        description="How certain the tool is about this data, from 0.0 to 1.0, with 0.0 being not confident at all 1.0 very confident",
-    )
+class OutputModel(BaseModel):
+    confidence_level: float = Field(ge=0, le=1)
+    ticket_found: bool
+    message: str
 
 
 @agent.tool
-def get_ticket_details(ctx: RunContext[MyDeps], ticket_id: str) -> TicketDetails:
+def get_ticket_details(ctx: RunContext[MyDeps], ticket_number: str) -> TicketDetails:
+    """Retrieves complete official records for a support ticket.
+    Mandatory to use this to find customer contact info, ticket status, and creation dates.
+
+    :param ctx: Context injected into chat
+    :type ctx: RunContext[MyDeps]
+    :param ticket_number: Ticket number provided by the user
+    :type ticket_number: str
+    :raises ValueError: Error if ticket number is not found
+    :return: ticket details from the database
+    :rtype: TicketDetails
     """
-    Retrieves official system records for a specific customer support ticket.
+    db_data = get_ticket_infos(ticket_number)
 
-    This tool is the ONLY authoritative source for ticket status, history, and
-    original customer descriptions. Call this tool immediately whenever a user
-    provides a ticket identifier or asks about the status of a specific issue.
+    if not db_data:
+        return f"No database record found for Ticket ID: {ticket_number}"
 
-    Args:
-        ctx: The runtime context containing database connection dependencies.
-        ticket_id: The alphanumeric ticket identifier. Must follow the format
-            'TKT-' followed by 4 or more digits (e.g., 'TKT-1001').
-
-    Returns:
-        A TicketDetails object containing the validated database record.
-
-    Raises:
-        ValueError: If the ticket_id format is invalid or not found in the database.
-    """
-    # Note: Ensure your return matches the type hint TicketDetails, not a string!
-    # Mocking the database fetch here:
-    return TicketDetails(
-        ticket_id=ticket_id,
-        reason="Poor internet connection in the North East region.",
-        confidence_level=1.0,
-    )
+    return db_data
 
 
 if __name__ == "__main__":
     my_db_deps = MyDeps(db_name="Production_SQL_Azure", is_admin=True)
-
-    result = agent.run_sync(
-        USER_PROMPT,
-        deps=my_db_deps,
-    )
+    result = agent.run_sync(USER_PROMPT, deps=my_db_deps, output_type=OutputModel)
+    if not result.output.ticket_found:
+        print("ticket not found")
     print(result.output)
