@@ -20,11 +20,40 @@ class MyDeps:
 
 
 model = MistralModel(AI_MODEL)
-agent = Agent(model, system_prompt=SYSTEM_PROMPT, deps_type=MyDeps)
 
 
 class OutputModel(BaseModel):
+    """
+    Structured response including the internal reasoning process.
+    """
+
     confidence_level: float = Field(ge=0, le=1)
+    ticket_found: bool
+    message: str
+
+
+agent = Agent(
+    model, system_prompt=SYSTEM_PROMPT, deps_type=MyDeps, output_type=OutputModel
+)
+
+planner_agent = Agent(
+    model,
+    deps_type=MyDeps,
+    system_prompt=(
+        "You are a Lead Controller. Your job is to: "
+        "1. Reason about the user's request. "
+        "2. Create a plan. "
+        "3. Delegate the lookup to the 'search_agent'. "
+        "4. Summarize the findings into the required output format."
+    ),
+)
+
+
+class FinalResponse(BaseModel):
+    chain_of_thought: str = Field(
+        description="A step-by-step internal monologue of how the ticket was analyzed."
+    )
+    plan_executed: str
     ticket_found: bool
     message: str
 
@@ -50,9 +79,19 @@ def get_ticket_details(ctx: RunContext[MyDeps], ticket_number: str) -> TicketDet
     return db_data
 
 
+@planner_agent.tool
+async def delegate_to_search_worker(ctx: RunContext[MyDeps], user_goal: str) -> str:
+    """Passes a specific data task to the search specialist."""
+    # The planner hands over the context to the worker
+    result = await agent.run(user_goal, deps=ctx.deps)
+    return result.output
+
+
 if __name__ == "__main__":
     my_db_deps = MyDeps(db_name="Production_SQL_Azure", is_admin=True)
-    result = agent.run_sync(USER_PROMPT, deps=my_db_deps, output_type=OutputModel)
+    result = planner_agent.run_sync(
+        USER_PROMPT, deps=my_db_deps, output_type=FinalResponse
+    )
     if not result.output.ticket_found:
         print("ticket not found")
     print(result.output)
