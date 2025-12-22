@@ -1,9 +1,25 @@
 import enum
+import os
 from datetime import datetime
 
-from sqlalchemy import Column, DateTime, Enum, ForeignKey, Integer, String, Text
+from dotenv import load_dotenv
+from sqlalchemy import (
+    Column,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    create_engine,
+)
 from sqlalchemy.orm import declarative_base, relationship
 
+load_dotenv()
+# --- 2. Create Engine ---
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+engine = create_engine(DATABASE_URL, echo=True)
 Base = declarative_base()
 
 
