@@ -1,14 +1,12 @@
-import os
+from config import AI_MODEL, SYSTEM_PROMPT, TEMPERATURE, USER_PROMPT
+from utils import talk_to_ai
 
-from dotenv import load_dotenv
-
-# This searches for a .env file and loads the variables
-load_dotenv()
-
-# Now you can access it like any other environment variable
-api_key = os.getenv("MISTRAL_API_KEY")
-
-if api_key:
-    print("Key loaded successfully!")
-else:
-    print("Key not found. Check your .env file location.")
+if __name__ == "__main__":
+    print(
+        talk_to_ai(
+            USER_PROMPT,
+            ai_model=AI_MODEL,
+            system_prompt=SYSTEM_PROMPT,
+            temperature=TEMPERATURE,
+        )
+    )
