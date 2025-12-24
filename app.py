@@ -53,10 +53,15 @@ planner_agent = Agent(
     model,
     deps_type=MyDeps,
     system_prompt=(
-        """You are a planning agent that delegates tasks to specialized worker agents.
-    Your goal is to determine whether to search for a support ticket or an invoice
-    based on the user's request, and then delegate the task accordingly.
-    """
+        """You are a smart router.
+        
+        # RULES OF THOUGHT
+        1. First, identify the ENTITY: Is it a Ticket or an Invoice?
+        2. Second, identify the INTENT: Is it a status check or a value lookup?
+        3. Third, SELECT the tool that best matches the ENTITY and INTENT.
+        
+        If no ID is provided, reject the request. DO NOT GUESS.
+        """
     ),
 )
 
@@ -165,6 +170,7 @@ if __name__ == "__main__":
     result = planner_agent.run_sync(
         USER_PROMPT, deps=my_db_deps, output_type=FinalResponse
     )
-    if not result.output.ticket_found:
-        print("ticket not found")
+    if not result.output.found:
+        print("Could not find the requested ticket or invoice.")
+
     print(result.output)
