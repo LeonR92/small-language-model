@@ -28,8 +28,9 @@ class OutputModel(BaseModel):
     Structured response including the internal reasoning process.
     """
 
-    confidence_level: float = Field(ge=0, le=1)
-    message: str
+    found: bool = Field(description="Indicates if the ticket or invoice was found")
+    details: str = Field(description="Details about the ticket or invoice")
+    confidence: float = Field(description="Confidence level of the agent's response")
 
 
 ticket_agent = Agent(
@@ -65,8 +66,7 @@ class FinalResponse(BaseModel):
         description="A step-by-step internal monologue of how the ticket was analyzed."
     )
     plan_executed: str
-    ticket_found: bool
-    message: str
+    final_answer: str = Field(description="The final answer provided to the user.")
 
 
 @ticket_agent.tool
