@@ -37,7 +37,15 @@ ticket_agent = Agent(
 )
 
 invoice_agent = Agent(
-    model, system_prompt=SYSTEM_PROMPT, deps_type=MyDeps, output_type=OutputModel
+    model,
+    system_prompt=(
+        """You are an invoice agent that retrieves invoice details based on user requests.
+    Always ensure to fetch the latest data from the billing system and present it clearly. Invoice amount is USD per default.
+    You can also convert USD to EUR using the provided tool.
+    """
+    ),
+    deps_type=MyDeps,
+    output_type=OutputModel,
 )
 
 planner_agent = Agent(
@@ -100,6 +108,20 @@ def get_invoice_details(ctx: RunContext[MyDeps], invoice_number: str) -> str:
         return f"No database record found for Invoice ID: {invoice_number}"
 
     return db_data
+
+
+@invoice_agent.tool_plain
+def USD_to_EUR_converter(amount_usd: float) -> float:
+    """Converts an amount from USD to EUR.
+
+    :param amount_usd: Amount in USD
+    :type amount_usd: float
+    :return: Equivalent amount in EUR
+    :rtype: float
+    """
+    conversion_rate = 0.85
+    amount_eur = amount_usd * conversion_rate
+    return round(amount_eur, 2)
 
 
 @planner_agent.tool

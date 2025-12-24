@@ -61,4 +61,4 @@ If you understand, wait for the user's request and then follow the above process
 TEMPERATURE = 0
 
 
-USER_PROMPT = "Give me status on INV-2193"
+USER_PROMPT = "Give me status on INV-2193. How much is it in Euros?"
