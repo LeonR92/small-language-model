@@ -59,3 +59,17 @@ class Ticket(Base):
     # Foreign Key
     customer_id = Column(Integer, ForeignKey("customers.id"), nullable=False)
     customer = relationship("Customer", back_populates="tickets")
+
+
+class Invoice(Base):
+    __tablename__ = "invoices"
+
+    id = Column(Integer, primary_key=True)
+    invoice_number = Column(String(20), unique=True, nullable=False)
+    amount = Column(Integer, nullable=False)
+    issued_date = Column(DateTime, default=datetime.utcnow)
+    due_date = Column(DateTime, nullable=False)
+
+    # Foreign Key
+    customer_id = Column(Integer, ForeignKey("customers.id"), nullable=False)
+    customer = relationship("Customer")
