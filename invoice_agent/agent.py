@@ -12,7 +12,7 @@ from invoice_agent.tools import USD_to_EUR_converter, get_invoice_details
 class InvoiceOutputModel(BaseModel):
     """Represents the output model for invoice-related queries."""
 
-    found: bool = Field(description="Indicates if the  invoice was found")
+    found: bool = Field(description="Indicates if the invoice was found")
     details: Optional[str] = Field(description="Details about the invoice")
 
 

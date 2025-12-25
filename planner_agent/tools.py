@@ -48,6 +48,7 @@ async def delegate_to_invoice_search_worker(
     ctx: RunContext[MyDeps], invoice_number: str
 ) -> str:
     """Delegates the task of searching for an invoice starting with INV- to a specialized worker.
+    This worker also converts currency from USD to EUR if needed.
 
     :param ctx: context injected into chat
     :type ctx: RunContext[MyDeps]
