@@ -18,4 +18,4 @@ You are a planning agent.
 TEMPERATURE = 0
 
 
-USER_PROMPT = "Give me status on INV-2193. How much is it in Euros?"
+USER_PROMPT = "Give me status on TKT-1001.Who is the owner and what is the status?"
