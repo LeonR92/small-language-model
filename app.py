@@ -1,5 +1,7 @@
 import os
 from dataclasses import dataclass
+from enum import StrEnum
+from typing import List
 
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
@@ -30,7 +32,6 @@ class OutputModel(BaseModel):
 
     found: bool = Field(description="Indicates if the ticket or invoice was found")
     details: str = Field(description="Details about the ticket or invoice")
-    confidence: float = Field(description="Confidence level of the agent's response")
 
 
 ticket_agent = Agent(
@@ -66,12 +67,28 @@ planner_agent = Agent(
 )
 
 
-class FinalResponse(BaseModel):
-    chain_of_thought: str = Field(
-        description="A step-by-step internal monologue of how the ticket was analyzed."
+class AgentNames(StrEnum):
+    TICKET_AGENT = "ticket_worker"
+    INVOICE_AGENT = "invoice_worker"
+    NONE = "none"
+
+
+class PlannerOutput(BaseModel):
+    """
+    The internal decision-making schema for the Router.
+    """
+
+    decision: str = Field(
+        description="The reasoning behind the agent's choice of tool."
     )
-    plan_executed: str
-    final_answer: str = Field(description="The final answer provided to the user.")
+    target_agent: AgentNames = Field(description="The classification of the request.")
+    tools_called: List[str] = Field(
+        default_factory=list,
+        description="The names of the tools the agent decided to invoke.",
+    )
+    final_summary: str = Field(
+        description="The final answer derived from the tool output."
+    )
 
 
 @ticket_agent.tool
@@ -168,6 +185,6 @@ async def delegate_to_invoice_search_worker(
 if __name__ == "__main__":
     my_db_deps = MyDeps(db_name="Production_SQL_Azure", is_admin=True)
     result = planner_agent.run_sync(
-        USER_PROMPT, deps=my_db_deps, output_type=FinalResponse
+        USER_PROMPT, deps=my_db_deps, output_type=PlannerOutput
     )
     print(result.output)
