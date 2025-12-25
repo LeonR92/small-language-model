@@ -11,7 +11,7 @@ from pydantic_ai.models.mistral import MistralModel
 from config import AI_MODEL, SYSTEM_PROMPT, USER_PROMPT
 from invoice_agent.agent import invoice_agent
 from service_layer.customer_details import get_customer_info
-from service_layer.ticket_service import TicketDetails, get_ticket_infos
+from ticket_agent.agent import ticket_agent
 
 load_dotenv()
 api_key = os.getenv("MISTRAL_API_KEY")
@@ -34,10 +34,6 @@ class OutputModel(BaseModel):
     found: bool = Field(description="Indicates if the ticket or invoice was found")
     details: Optional[str] = Field(description="Details about the ticket or invoice")
 
-
-ticket_agent = Agent(
-    model, system_prompt=SYSTEM_PROMPT, deps_type=MyDeps, output_type=OutputModel
-)
 
 customer_detail_agent = Agent(
     model, system_prompt=SYSTEM_PROMPT, deps_type=MyDeps, output_type=OutputModel
@@ -84,27 +80,6 @@ class PlannerOutput(BaseModel):
     final_summary: str = Field(
         description="The final answer derived from the tool output."
     )
-
-
-@ticket_agent.tool
-def get_ticket_details(ctx: RunContext[MyDeps], ticket_number: str) -> TicketDetails:
-    """Retrieves complete official records for a support ticket.
-    Mandatory to use this to find customer contact info, ticket status, and creation dates.
-
-    :param ctx: Context injected into chat
-    :type ctx: RunContext[MyDeps]
-    :param ticket_number: Ticket number provided by the user
-    :type ticket_number: str
-    :raises ValueError: Error if ticket number is not found
-    :return: ticket details from the database
-    :rtype: TicketDetails
-    """
-    db_data = get_ticket_infos(ticket_number)
-
-    if not db_data:
-        return f"No database record found for Ticket ID: {ticket_number}"
-
-    return db_data
 
 
 @customer_detail_agent.tool
