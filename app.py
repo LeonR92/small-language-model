@@ -202,7 +202,7 @@ async def delegate_to_ticket_search_worker(
 
     :param ctx: context injected into chat
     :type ctx: RunContext[MyDeps]
-    :param ticket_number: Ticket number provided by the user
+    :param ticket_number: Ticket number provided by the user, starting with TKT
     :type ticket_number: str
     :return: output from the worker agent
     :rtype: str
@@ -216,7 +216,7 @@ async def delegate_to_ticket_search_worker(
 async def delegate_to_invoice_search_worker(
     ctx: RunContext[MyDeps], invoice_number: str
 ) -> str:
-    """Delegates the task of searching for an invoice to a specialized worker.
+    """Delegates the task of searching for an invoice starting with INV- to a specialized worker.
 
     :param ctx: context injected into chat
     :type ctx: RunContext[MyDeps]
