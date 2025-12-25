@@ -57,4 +57,4 @@ When writing code, adhere to the following style guide:
 TEMPERATURE = 0
 
 
-USER_PROMPT = "Give me all the details on jeanette81@example.org. Is TKT-1001 her tikcket? what is the status"
+USER_PROMPT = " status of TKT-1001? what about INV-38559-FH status"
