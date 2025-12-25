@@ -1,21 +1,12 @@
-import os
 from typing import Optional
 
-from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 from pydantic_ai import Agent
-from pydantic_ai.models.mistral import MistralModel
 
-from config import AI_MODEL
+from ai_model import model
 from dependencies import MyDeps
 from invoice_agent.prompt import invoice_agent_prompt
 from invoice_agent.tools import USD_to_EUR_converter, get_invoice_details
-
-load_dotenv()
-api_key = os.getenv("MISTRAL_API_KEY")
-
-
-model = MistralModel(AI_MODEL)
 
 
 class InvoiceOutputModel(BaseModel):

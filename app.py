@@ -1,16 +1,16 @@
 import os
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import List, Optional
+from typing import List
 
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 from pydantic_ai import Agent, RunContext
 from pydantic_ai.models.mistral import MistralModel
 
-from config import AI_MODEL, SYSTEM_PROMPT, USER_PROMPT
+from config import AI_MODEL, USER_PROMPT
+from customer_detail_agent.agent import customer_detail_agent
 from invoice_agent.agent import invoice_agent
-from service_layer.customer_details import get_customer_info
 from ticket_agent.agent import ticket_agent
 
 load_dotenv()
@@ -24,20 +24,6 @@ class MyDeps:
 
 
 model = MistralModel(AI_MODEL)
-
-
-class OutputModel(BaseModel):
-    """
-    Structured response including the internal reasoning process.
-    """
-
-    found: bool = Field(description="Indicates if the ticket or invoice was found")
-    details: Optional[str] = Field(description="Details about the ticket or invoice")
-
-
-customer_detail_agent = Agent(
-    model, system_prompt=SYSTEM_PROMPT, deps_type=MyDeps, output_type=OutputModel
-)
 
 
 planner_agent = Agent(
@@ -80,26 +66,6 @@ class PlannerOutput(BaseModel):
     final_summary: str = Field(
         description="The final answer derived from the tool output."
     )
-
-
-@customer_detail_agent.tool
-def get_customer_details(
-    ctx: RunContext[MyDeps], customer_id: str | None, email_address: str | None
-) -> str:
-    """Fetches customer details including invoice and ticket information from the customer database.
-    Use this to get extended customer information
-
-    :param ctx: context injected into chat
-    :type ctx: RunContext[MyDeps]
-    :param customer_id: customer ID provided by the user
-    :type customer_id: str
-    :return: customer detail
-    :rtype: str
-    """
-    db_data = get_customer_info(customer_id, email_address)
-    if not db_data:
-        return f"No database record found for Customer ID: {customer_id}"
-    return db_data
 
 
 @planner_agent.tool
