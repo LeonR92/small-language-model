@@ -1,7 +1,7 @@
 import os
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import List
+from typing import List, Optional
 
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
@@ -9,6 +9,7 @@ from pydantic_ai import Agent, RunContext
 from pydantic_ai.models.mistral import MistralModel
 
 from config import AI_MODEL, SYSTEM_PROMPT, USER_PROMPT
+from service_layer.customer_details import get_customer_info
 from service_layer.invoice_service import get_invoice_infos
 from service_layer.ticket_service import TicketDetails, get_ticket_infos
 
@@ -31,10 +32,14 @@ class OutputModel(BaseModel):
     """
 
     found: bool = Field(description="Indicates if the ticket or invoice was found")
-    details: str = Field(description="Details about the ticket or invoice")
+    details: Optional[str] = Field(description="Details about the ticket or invoice")
 
 
 ticket_agent = Agent(
+    model, system_prompt=SYSTEM_PROMPT, deps_type=MyDeps, output_type=OutputModel
+)
+
+customer_detail_agent = Agent(
     model, system_prompt=SYSTEM_PROMPT, deps_type=MyDeps, output_type=OutputModel
 )
 
@@ -70,6 +75,7 @@ planner_agent = Agent(
 class AgentNames(StrEnum):
     TICKET_AGENT = "ticket_worker"
     INVOICE_AGENT = "invoice_worker"
+    CUSTOMER_DETAIL_AGENT = "customer_detail_worker"
     NONE = "none"
 
 
@@ -146,39 +152,81 @@ def USD_to_EUR_converter(amount_usd: float) -> float:
     return round(amount_eur, 2)
 
 
+@customer_detail_agent.tool
+def get_customer_details(
+    ctx: RunContext[MyDeps], customer_id: str | None, email_address: str | None
+) -> str:
+    """Fetches customer details including invoice and ticket information from the customer database.
+    Use this to get extended customer information
+
+    :param ctx: context injected into chat
+    :type ctx: RunContext[MyDeps]
+    :param customer_id: customer ID provided by the user
+    :type customer_id: str
+    :return: customer detail
+    :rtype: str
+    """
+    db_data = get_customer_info(customer_id, email_address)
+    if not db_data:
+        return f"No database record found for Customer ID: {customer_id}"
+    return db_data
+
+
+@planner_agent.tool
+async def delegate_to_customer_detail_worker(
+    ctx: RunContext[MyDeps], customer_id: str | None, email_address: str | None
+) -> str:
+    """Delegates the task of retrieving customer details to a specialized worker.
+
+    :param ctx: context injected into chat
+    :type ctx: RunContext[MyDeps]
+    :param customer_id: customer's ID
+    :type customer_id: str
+    :return: output from the worker agent
+    :rtype: str
+    """
+    if email_address:
+        instruction = f"Retrieve details for customer email: {email_address}"
+    else:
+        instruction = f"Retrieve details for customer ID: {customer_id}"
+    # The planner hands over the context to the worker
+    result = await customer_detail_agent.run(instruction, deps=ctx.deps)
+    return result.output
+
+
 @planner_agent.tool
 async def delegate_to_ticket_search_worker(
-    ctx: RunContext[MyDeps], user_goal: str
+    ctx: RunContext[MyDeps], ticket_number: str
 ) -> str:
     """Delegates the task of searching for a ticket to a specialized worker.
 
     :param ctx: context injected into chat
     :type ctx: RunContext[MyDeps]
-    :param user_goal: user's original goal
-    :type user_goal: str
+    :param ticket_number: Ticket number provided by the user, starting with TKT
+    :type ticket_number: str
     :return: output from the worker agent
     :rtype: str
     """
     # The planner hands over the context to the worker
-    result = await ticket_agent.run(user_goal, deps=ctx.deps)
+    result = await ticket_agent.run(ticket_number, deps=ctx.deps)
     return result.output
 
 
 @planner_agent.tool
 async def delegate_to_invoice_search_worker(
-    ctx: RunContext[MyDeps], user_goal: str
+    ctx: RunContext[MyDeps], invoice_number: str
 ) -> str:
-    """Delegates the task of searching for an invoice to a specialized worker.
+    """Delegates the task of searching for an invoice starting with INV- to a specialized worker.
 
     :param ctx: context injected into chat
     :type ctx: RunContext[MyDeps]
-    :param user_goal: user's original goal
-    :type user_goal: str
+    :param invoice_number: Invoice number provided by the user
+    :type invoice_number: str
     :return: output from the worker agent
     :rtype: str
     """
     # The planner hands over the context to the worker
-    result = await invoice_agent.run(user_goal, deps=ctx.deps)
+    result = await invoice_agent.run(invoice_number, deps=ctx.deps)
     return result.output
 
 
