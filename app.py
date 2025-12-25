@@ -9,8 +9,8 @@ from pydantic_ai import Agent, RunContext
 from pydantic_ai.models.mistral import MistralModel
 
 from config import AI_MODEL, SYSTEM_PROMPT, USER_PROMPT
+from invoice_agent.agent import invoice_agent
 from service_layer.customer_details import get_customer_info
-from service_layer.invoice_service import get_invoice_infos
 from service_layer.ticket_service import TicketDetails, get_ticket_infos
 
 load_dotenv()
@@ -43,17 +43,6 @@ customer_detail_agent = Agent(
     model, system_prompt=SYSTEM_PROMPT, deps_type=MyDeps, output_type=OutputModel
 )
 
-invoice_agent = Agent(
-    model,
-    system_prompt=(
-        """You are an invoice agent that retrieves invoice details based on user requests.
-    Always ensure to fetch the latest data from the billing system and present it clearly. Invoice amount is USD per default.
-    You can also convert USD to EUR using the provided tool.
-    """
-    ),
-    deps_type=MyDeps,
-    output_type=OutputModel,
-)
 
 planner_agent = Agent(
     model,
@@ -116,40 +105,6 @@ def get_ticket_details(ctx: RunContext[MyDeps], ticket_number: str) -> TicketDet
         return f"No database record found for Ticket ID: {ticket_number}"
 
     return db_data
-
-
-@invoice_agent.tool
-def get_invoice_details(ctx: RunContext[MyDeps], invoice_number: str) -> str:
-    """Fetches invoice details from the billing system.
-
-    :param ctx: Context injected into chat
-    :type ctx: RunContext[MyDeps]
-    :param invoice_number: Invoice number provided by the user
-    :type invoice_number: str
-    :return: invoice details as a string
-    :rtype: str
-    """
-    # Simulate fetching invoice details
-    db_data = get_invoice_infos(invoice_number)
-
-    if not db_data:
-        return f"No database record found for Invoice ID: {invoice_number}"
-
-    return db_data
-
-
-@invoice_agent.tool_plain
-def USD_to_EUR_converter(amount_usd: float) -> float:
-    """Converts an amount from USD to EUR.
-
-    :param amount_usd: Amount in USD
-    :type amount_usd: float
-    :return: Equivalent amount in EUR
-    :rtype: float
-    """
-    conversion_rate = 0.85
-    amount_eur = amount_usd * conversion_rate
-    return round(amount_eur, 2)
 
 
 @customer_detail_agent.tool
