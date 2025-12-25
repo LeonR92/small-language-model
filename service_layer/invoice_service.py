@@ -9,9 +9,9 @@ class InvoiceDetails(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     invoice_number: str = Field(
-        pattern=r"^INV-\d+$",
-        description="The unique identifier for the invoice, e.g., INV-1001.",
-        examples=["INV-1001"],
+        pattern=r"^INV-\d+-[A-Za-z]+$",
+        description="The unique identifier for the invoice, e.g., INV-02398-JM.",
+        examples=["INV-02398-JM"],
     )
     customer_name: str = Field(
         description="The full name of the customer associated with the invoice."
