@@ -170,7 +170,4 @@ if __name__ == "__main__":
     result = planner_agent.run_sync(
         USER_PROMPT, deps=my_db_deps, output_type=FinalResponse
     )
-    if not result.output.found:
-        print("Could not find the requested ticket or invoice.")
-
     print(result.output)
