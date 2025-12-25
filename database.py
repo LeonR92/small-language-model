@@ -73,3 +73,18 @@ class Invoice(Base):
     # Foreign Key
     customer_id = Column(Integer, ForeignKey("customers.id"), nullable=False)
     customer = relationship("Customer")
+
+
+class CustomerDetail(Base):
+    __tablename__ = "customer_details"
+
+    id = Column(Integer, primary_key=True)
+    address = Column(String(255), nullable=False)
+    phone_number = Column(String(20), nullable=False)
+    country = Column(String(100), nullable=False)
+    city = Column(String(100), nullable=False)
+    is_vip = Column(Integer, default=0)  # 0 = No, 1 = Yes
+
+    # Foreign Key
+    customer_id = Column(Integer, ForeignKey("customers.id"), nullable=False)
+    customer = relationship("Customer")
