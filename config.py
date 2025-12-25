@@ -57,6 +57,6 @@ When writing code, adhere to the following style guide:
 TEMPERATURE = 0
 
 
-USER_PROMPT_OLD = "What is the status of TKT-1001? what about INV-38559-FH status, how much is it in euros"
+USER_PROMPT = "Retrieve INV-38559-FH. The customer is disputing the conversion rate we used last time. Give me the total in Euros using our official internal currency converter tool so I can prove we used the correct corporate rate."
 
-USER_PROMPT = "Give me all the infos on wangsandra@example.org"
+USER_PROMPT_OLD = "Give me all the infos on wangsandra@example.org"
